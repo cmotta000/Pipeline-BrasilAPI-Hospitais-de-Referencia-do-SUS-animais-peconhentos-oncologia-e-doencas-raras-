@@ -1,0 +1,11 @@
+codigo_especialidade,especialidade,codigo_vertical
+unacon,UNACON - Unidade de Assistência de Alta Complexidade em Oncologia,oncology
+cacon,CACON - Centro de Assistência de Alta Complexidade em Oncologia,oncology
+breast_reconstruction,Reconstrução mamária,oncology
+oncology_surgery,Cirurgia oncológica,oncology
+radiotherapy_complex,Radioterapia em complexo hospitalar,oncology
+isolated_radiotherapy,Radioterapia isolada,oncology
+synchronous_treatment,Tratamento sincrônico,oncology
+rare_diseases_reference,Serviço de referência em doenças raras,rare_diseases
+rare_diseases_specialized_care,Atenção especializada em doenças raras,rare_diseases
+gene_therapy,Terapia gênica,rare_diseases

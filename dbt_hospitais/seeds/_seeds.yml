@@ -1,0 +1,24 @@
+version: 2
+seeds:
+  - name: soros
+    description: De-para dos códigos de tratamento da API para o soro/animal em português.
+    columns:
+      - name: codigo_tratamento
+        data_tests: [unique, not_null]
+  - name: verticais
+    description: De-para das verticais (habilitações) da API.
+    columns:
+      - name: codigo_vertical
+        data_tests: [unique, not_null]
+  - name: especialidades
+    description: De-para dos códigos de especialidade da API (oncologia / doenças raras) para português.
+    columns:
+      - name: codigo_especialidade
+        data_tests: [unique, not_null]
+      - name: codigo_vertical
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('verticais')
+                field: codigo_vertical

@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_brasilapi__ultima_extracao
+    description: Última extração de cada endpoint com metadados da fonte (MapaSUS / Ministério da Saúde).
+    columns:
+      - name: endpoint
+        data_tests: [unique, not_null]
+
+  - name: stg_brasilapi__hospitais_json
+    description: Payload cru dos hospitais da última extração.
+
+  - name: stg_brasilapi__hospitais
+    description: Hospitais de referência do SUS (todas as verticais), 1 linha por hospital.
+    columns:
+      - name: hospital_id
+        data_tests: [unique, not_null]
+      - name: uf
+        data_tests: [not_null]
+
+  - name: stg_brasilapi__hospital_tratamentos
+    description: Hospital x soro disponível.
+    columns:
+      - name: codigo_tratamento
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('soros')
+                field: codigo_tratamento
+
+  - name: stg_brasilapi__hospital_verticais
+    description: Hospital x vertical (habilitação).
+    columns:
+      - name: codigo_vertical
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('verticais')
+                field: codigo_vertical
+
+  - name: stg_brasilapi__hospital_especialidades
+    description: Hospital x especialidade x código de habilitação (oncologia / doenças raras).
+    columns:
+      - name: hospital_id
+        data_tests: [not_null]
+      - name: codigo_especialidade
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('especialidades')
+                field: codigo_especialidade
+      - name: codigo_habilitacao
+        data_tests: [not_null]
+
+  - name: stg_brasilapi__ciatox
+    description: Centros de Informação e Assistência Toxicológica.
+    columns:
+      - name: ciatox_id
+        data_tests: [unique, not_null]

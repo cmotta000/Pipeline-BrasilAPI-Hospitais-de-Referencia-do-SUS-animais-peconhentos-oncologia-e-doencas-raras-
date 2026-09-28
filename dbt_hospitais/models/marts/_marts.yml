@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: dim_hospitais
+    description: Hospitais de referência do SUS com habilitações, soros e especialidades consolidados.
+    columns:
+      - name: hospital_id
+        data_tests: [unique, not_null]
+
+  - name: dim_soro
+    description: Soros antiveneno com animal e tipo de acidente.
+    columns:
+      - name: codigo_tratamento
+        data_tests: [unique, not_null]
+
+  - name: fct_hospital_soro
+    description: Fato sem medida - hospital x soro antiveneno disponível (só chaves).
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "hospital_id || '|' || codigo_tratamento"
+    columns:
+      - name: hospital_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_hospitais')
+                field: hospital_id
+      - name: codigo_tratamento
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_soro')
+                field: codigo_tratamento
+
+  - name: dim_especialidade
+    description: Especialidades de oncologia e doenças raras com a vertical correspondente.
+    columns:
+      - name: codigo_especialidade
+        data_tests: [unique, not_null]
+
+  - name: dim_habilitacao
+    description: Códigos de habilitação do SUS com descrição padronizada ('Não informado pela fonte' quando a API não descreve).
+    columns:
+      - name: codigo_habilitacao
+        data_tests: [unique, not_null]
+      - name: descricao_habilitacao
+        data_tests: [not_null]
+
+  - name: dim_data
+    description: Calendário diário (data_key = YYYYMMDD) com membro -1 = 'Não informada'.
+    columns:
+      - name: data_key
+        data_tests: [unique, not_null]
+      - name: data
+        description: Nula apenas no membro desconhecido (-1).
+        data_tests:
+          - not_null:
+              config:
+                where: "data_key <> -1"
+
+  - name: fct_hospital_especialidade
+    description: Fato sem medida - hospital x especialidade x código de habilitação (só chaves, sem nulos).
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "hospital_id || '|' || codigo_especialidade || '|' || codigo_habilitacao"
+    columns:
+      - name: hospital_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_hospitais')
+                field: hospital_id
+      - name: codigo_especialidade
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_especialidade')
+                field: codigo_especialidade
+      - name: codigo_habilitacao
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_habilitacao')
+                field: codigo_habilitacao
+      - name: data_habilitacao_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_data')
+                field: data_key
+
+  - name: hospitais_por_uf_soro
+    description: Total de hospitais e cidades por UF e soro.
+
+  - name: cobertura_por_uf
+    description: Resumo por UF (hospitais por habilitação, tipos de soro, CIATOX).
+    columns:
+      - name: uf
+        data_tests: [unique, not_null]
+
+  - name: dim_ciatox
+    description: Centros de Informação e Assistência Toxicológica.
+    columns:
+      - name: ciatox_id
+        data_tests: [unique, not_null]

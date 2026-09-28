@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Dados crus da BrasilAPI gravados por extracao/extrair_brasilapi_hospitais.py
+    schema: bronze
+    tables:
+      - name: brasilapi_extracoes
+        description: Uma linha por endpoint por execução, com o envelope da resposta.
+        columns:
+          - name: id_extracao
+            data_tests: [unique, not_null]
+      - name: brasilapi_raw
+        description: Um item da API por linha, JSON cru em payload.
