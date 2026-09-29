@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Dimensão de datas (chave inteligente YYYYMMDD) + membro desconhecido -1 = 'Não informada'.
 -- O intervalo cobre as datas das fatos; o teste relationships nas fatos avisa se alguma ficar de fora.
 with datas as (

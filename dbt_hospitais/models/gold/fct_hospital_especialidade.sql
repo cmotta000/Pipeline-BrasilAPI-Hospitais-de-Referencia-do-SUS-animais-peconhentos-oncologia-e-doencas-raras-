@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Fato sem medida: 1 linha por hospital x especialidade x código de habilitação.
 -- Só chaves: descrições ficam em dim_hospitais, dim_especialidade, dim_habilitacao e dim_data.
 -- A fonte não informa a data de habilitação de oncologia -> data_habilitacao_key = -1 ('Não informada').

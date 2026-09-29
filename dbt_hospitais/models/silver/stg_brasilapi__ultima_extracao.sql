@@ -1,9 +1,11 @@
+{{ config(materialized='view') }}
+
 -- Extração mais recente de cada endpoint + metadados do envelope da API
 with ranqueado as (
     select
         *,
         row_number() over (partition by endpoint order by extraido_em desc) as rn
-    from {{ source('bronze', 'brasilapi_extracoes') }}
+    from {{ ref('brz_brasilapi__extracoes') }}
 )
 
 select

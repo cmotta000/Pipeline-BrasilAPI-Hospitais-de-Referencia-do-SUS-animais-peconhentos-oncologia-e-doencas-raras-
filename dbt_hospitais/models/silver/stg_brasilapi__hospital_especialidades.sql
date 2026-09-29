@@ -1,3 +1,5 @@
+{{ config(materialized='view') }}
+
 -- Explode specialties -> qualification_codes: 1 linha por hospital x especialidade x código de habilitação.
 -- A API às vezes junta vários códigos numa única string, separados por quebra de linha
 -- ou só por espaços ("... Metabolismo      35.11- Serviço ..."), e às vezes omite o ponto ("3501-").

@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Dimensão de hospitais: 1 linha por hospital, com habilitações e soros consolidados
 with verticais as (
     select

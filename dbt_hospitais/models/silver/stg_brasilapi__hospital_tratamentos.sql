@@ -1,3 +1,5 @@
+{{ config(materialized='view') }}
+
 -- Explode treatments: 1 linha por hospital x soro
 select
     h.hospital_id,

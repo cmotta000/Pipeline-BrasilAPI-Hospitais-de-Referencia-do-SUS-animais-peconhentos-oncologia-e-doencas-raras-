@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Centros de Informação e Assistência Toxicológica
 select
     ciatox_id,

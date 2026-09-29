@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Quantos hospitais / cidades oferecem cada soro em cada UF
 select
     h.uf,

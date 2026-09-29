@@ -1,3 +1,5 @@
+{{ config(materialized='view') }}
+
 -- 1 linha por hospital, todos os campos escalares da API tipados
 select
     hospital_id,

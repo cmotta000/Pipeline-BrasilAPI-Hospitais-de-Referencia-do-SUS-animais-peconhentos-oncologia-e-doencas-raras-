@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Dimensão de especialidades (oncologia / doenças raras) com a vertical correspondente
 select
     e.codigo_especialidade,

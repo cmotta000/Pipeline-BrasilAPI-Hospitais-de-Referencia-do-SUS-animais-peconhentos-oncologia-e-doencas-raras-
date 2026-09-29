@@ -24,13 +24,14 @@ Extração via API/
 ├── .env / .env.example                 # Credenciais do Postgres (o .env não vai pro git)
 ├── extracao/
 │   └── extrair_brasilapi_hospitais.py  # Extração e carga da bronze
-├── dbt_hospitais/                      # Projeto dbt (silver + gold)
+├── dbt_hospitais/                      # Projeto dbt (bronze + silver + gold)
 │   ├── dbt_project.yml
 │   ├── profiles.yml                    # Lê a conexão das variáveis do .env
 │   ├── macros/generate_schema_name.sql
 │   ├── seeds/                          # De-paras (soros, verticais)
-│   ├── models/staging/                 # Silver
-│   ├── models/marts/                   # Gold
+│   ├── models/bronze/                  # Bronze (views sobre as tabelas cruas + _sources.yml)
+│   ├── models/silver/                  # Silver (views tipadas / explodidas)
+│   ├── models/gold/                    # Gold (dimensões, fatos e agregados)
 │   └── tests/                          # Testes singulares
 └── _legado/                            # Versão antiga (scripts SQL/Python sem dbt) – só referência
 ```
@@ -137,10 +138,14 @@ Projeto `dbt_hospitais/` (nome `hospitais_sus`, profile `hospitais_sus`, target 
 
 ### 5.1 Configurações relevantes
 
-- `models/staging` → schema **`silver`**, materializados como **view**
-- `models/marts` → schema **`gold`**, materializados como **table**
+- `models/bronze` → schema **`bronze`**, materializados como **view** (tag `bronze`)
+- `models/silver` → schema **`silver`**, materializados como **view** (tag `silver`)
+- `models/gold` → schema **`gold`**, materializados como **table** (tag `gold`)
 - `seeds` → schema **`silver`**
-- Macro `generate_schema_name`: faz o dbt usar o nome do schema exatamente como configurado (`silver`/`gold`) em vez do padrão `public_silver`.
+- Cada `.sql` começa com `{{ config(materialized=...) }}` declarando sua materialização (tem precedência sobre o `dbt_project.yml`).
+- Só a bronze usa `source()`; silver e gold referenciam apenas modelos via `ref()`, então a linhagem completa aparece no `dbt docs`.
+- Rodar uma camada: `python pipeline.py dbt build --select tag:silver` (ou `models/gold`, `+dim_hospitais` etc.).
+- Macro `generate_schema_name`: faz o dbt usar o nome do schema exatamente como configurado (`bronze`/`silver`/`gold`) em vez do padrão `public_silver`.
 
 ### 5.2 Seeds (de-paras)
 
@@ -150,7 +155,14 @@ Projeto `dbt_hospitais/` (nome `hospitais_sus`, profile `hospitais_sus`, target 
 | `verticais` | `venomous_animals` → Animais peçonhentos, `oncology` → Oncologia, `rare_diseases` → Doenças raras |
 | `especialidades` | Código de especialidade da API → nome em português + vertical (10 linhas: `unacon` → UNACON, `breast_reconstruction` → Reconstrução mamária etc.) |
 
-### 5.3 Silver (`models/staging`, views)
+### 5.3 Bronze (`models/bronze`, views)
+
+| Modelo | Grão | Descrição |
+|---|---|---|
+| `brz_brasilapi__extracoes` | endpoint × execução | View sobre `source('bronze', 'brasilapi_extracoes')` – envelope de cada extração |
+| `brz_brasilapi__raw` | 1 por item da API | View sobre `source('bronze', 'brasilapi_raw')` – JSON cru em `payload` |
+
+### 5.4 Silver (`models/silver`, views)
 
 | Modelo | Grão | Descrição |
 |---|---|---|
@@ -162,7 +174,7 @@ Projeto `dbt_hospitais/` (nome `hospitais_sus`, profile `hospitais_sus`, target 
 | `stg_brasilapi__hospital_especialidades` | hospital × especialidade × código | Explode `specialties` → `qualification_codes`. Trata as sujeiras da fonte: vários códigos na mesma string (separados por `\n` **ou só por espaços**), código sem ponto (`3501` → `35.01`) e espaços repetidos. Separa `codigo_habilitacao` (ex.: `17.06`) de `descricao_habilitacao` e mantém `qualificacao_original` para rastreabilidade |
 | `stg_brasilapi__ciatox` | 1 por CIATOX | Centros de Informação e Assistência Toxicológica tipados |
 
-### 5.4 Gold (`models/marts`, tabelas)
+### 5.5 Gold (`models/gold`, tabelas)
 
 Modelagem dimensional (estrela):
 
@@ -184,11 +196,11 @@ Modelagem dimensional (estrela):
 | `cobertura_por_uf` | 1 por UF | Resumo: hospitais por habilitação, cidades atendidas, hospitais que requerem verificação, tipos de soro disponíveis e número de CIATOX |
 | `dim_ciatox` | 1 por CIATOX | CIATOX com telefones concatenados |
 
-### 5.5 Linhagem
+### 5.6 Linhagem
 
 ```
-bronze.brasilapi_extracoes ─► stg_brasilapi__ultima_extracao ─┬─► stg_brasilapi__hospitais_json ─┬─► stg_brasilapi__hospitais ──────────────┐
-bronze.brasilapi_raw ─────────────────────────────────────────┤                                  ├─► stg_brasilapi__hospital_tratamentos ─┤
+brz_brasilapi__extracoes ───► stg_brasilapi__ultima_extracao ─┬─► stg_brasilapi__hospitais_json ─┬─► stg_brasilapi__hospitais ──────────────┐
+brz_brasilapi__raw ───────────────────────────────────────────┤                                  ├─► stg_brasilapi__hospital_tratamentos ─┤
                                                               │                                  ├─► stg_brasilapi__hospital_verticais ───┤
                                                               │                                  └─► stg_brasilapi__hospital_especialidades
                                                               └─► stg_brasilapi__ciatox ─► dim_ciatox
@@ -207,9 +219,10 @@ dim_hospitais + fct_hospital_soro + dim_ciatox ─► cobertura_por_uf
 
 Para ver o grafo interativo: `python pipeline.py dbt docs generate` e depois `python pipeline.py dbt docs serve`.
 
-### 5.6 Testes de qualidade (54)
+### 5.7 Testes de qualidade (59)
 
 - **Source**: `id_extracao` único e não nulo.
+- **Bronze**: `id_extracao` único e não nulo em `brz_brasilapi__extracoes`; `endpoint` não nulo; todo item de `brz_brasilapi__raw` aponta para uma extração existente.
 - **Seeds**: códigos únicos e não nulos em `soros`, `verticais` e `especialidades`; toda especialidade aponta para uma vertical existente.
 - **Silver**: `endpoint` único na última extração; `hospital_id` e `ciatox_id` únicos e não nulos; `uf` não nula; `codigo_habilitacao` não nulo (pega regressão no parsing); **relationships** garantindo que todo código de tratamento, vertical e especialidade vindo da API existe no seed (se a API criar um código novo, o teste falha e avisa que o de-para precisa ser atualizado).
 - **Gold**: chaves únicas/não nulas em todas as dimensões; `descricao_habilitacao` não nula; `dim_data.data` não nula exceto no membro -1; grão único nas duas fatos; **todas as chaves das fatos não nulas e com relationships** para as dimensões (integridade referencial da estrela — inclusive `data_habilitacao_key` → `dim_data`, que falha se aparecer data fora do calendário).

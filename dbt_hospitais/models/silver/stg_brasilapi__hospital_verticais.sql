@@ -1,3 +1,5 @@
+{{ config(materialized='view') }}
+
 -- Explode verticals: 1 linha por hospital x vertical (habilitação)
 select
     h.hospital_id,

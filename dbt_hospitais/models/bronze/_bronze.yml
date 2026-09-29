@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: brz_brasilapi__extracoes
+    description: Envelope de cada extração da BrasilAPI (1 linha por endpoint por execução, histórico completo).
+    columns:
+      - name: id_extracao
+        data_tests: [unique, not_null]
+      - name: endpoint
+        data_tests: [not_null]
+
+  - name: brz_brasilapi__raw
+    description: Itens crus da BrasilAPI (1 linha por item, JSON em payload, histórico completo).
+    columns:
+      - name: id_extracao
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('brz_brasilapi__extracoes')
+                field: id_extracao

@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Fato sem medida: 1 linha por hospital x soro disponível.
 -- Atributos descritivos ficam em dim_hospitais (localização) e dim_soro (animal / acidente).
 select

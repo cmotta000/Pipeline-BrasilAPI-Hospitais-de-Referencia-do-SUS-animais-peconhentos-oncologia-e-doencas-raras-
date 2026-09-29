@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 -- Visão consolidada por UF: hospitais por habilitação, soros e CIATOX
 with hospitais as (
     select
